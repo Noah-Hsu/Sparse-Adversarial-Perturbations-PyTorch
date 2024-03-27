@@ -43,6 +43,21 @@ def calc_gradients(
         min_in = input_image.min().detach()
         max_in = input_image.max().detach()
 
+        ###############
+        # 保存原始图像
+        image = Variable(input_image, requires_grad=False)
+        dir = f"./pic/before/{batch_index}/"
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        image = image[0]  # 取出批次中的第一个样本
+        to_pil = transforms.ToPILImage()
+        for i in range(40):  # 遍历每个图像序列中的每一帧
+            for j in range(3):  # 遍历每个通道
+                image[i, j] = (image[i, j] * std[j]) + mean[j]
+            pil_image = to_pil(image[i])  # 转换为字节张量并转换为 PIL 图像
+            pil_image.save(f"{dir}/{i}.jpg")  # 显示图像
+        ###############
+
         all_loss = []
         for iiter in range(max_iter):
 
@@ -57,6 +72,7 @@ def calc_gradients(
             true_image = torch.clamp((modifier[0, 0, :, :, :] + input_image[0, 0, :, :, :]), min_in, max_in)
             true_image = torch.unsqueeze(true_image, 0)
 
+            # 处理第一个视频
             for ll in range(seq_len - 1):
                 if indicator[ll + 1] == 1:
                     mask_temp = torch.clamp((modifier[0, ll + 1, :, :, :] + input_image[0, ll + 1, :, :, :]), min_in,
@@ -66,7 +82,7 @@ def calc_gradients(
                 mask_temp = torch.unsqueeze(mask_temp, 0)
                 true_image = torch.cat((true_image, mask_temp), 0)
             true_image = torch.unsqueeze(true_image, 0)
-
+            # 处理后续视频
             for kk in range(batch_size - 1):
 
                 true_image_temp = torch.clamp((modifier[0, 0, :, :, :] + input_image[kk + 1, 0, :, :, :]), min_in,
@@ -84,6 +100,19 @@ def calc_gradients(
                 true_image_temp = torch.unsqueeze(true_image_temp, 0)
 
                 true_image = torch.cat((true_image, true_image_temp), 0)
+
+            ###############
+            # 保存扰动后图像
+            image = Variable(true_image, requires_grad=False)
+            dir = f"./pic/after/{batch_index}/{iiter}/"
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            image = image[0]  # 取出批次中的第一个样本
+            to_pil = transforms.ToPILImage()
+            for i in range(40):  # 遍历每个图像序列中的每一帧
+                pil_image = to_pil(image[i])  # 转换为字节张量并转换为 PIL 图像
+                pil_image.save(f"{dir}/{i}.jpg")  # 显示图像
+            ###############
 
             # Prediction on the adversarial video
             probs, pre_label = model(true_image)
@@ -134,8 +163,7 @@ def calc_gradients(
                     # print the map value for each frame
                     print(str(pp) + ' ' + str((norm_frame[0][pp]).detach().cpu().numpy()))
 
-            print(
-                f'Prediction for adversarial video: {pre_label.cpu().numpy()}, Original_label: {input_label.cpu().numpy()}')
+            print(f'{iiter}Prediction for adversarial video: {pre_label.cpu().numpy()}, Original_label: {input_label.cpu().numpy()}')
 
             # Empty cache
             if torch.cuda.is_available():
@@ -218,4 +246,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+    main()
