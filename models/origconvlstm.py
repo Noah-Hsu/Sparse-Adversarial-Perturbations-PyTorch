@@ -3,7 +3,8 @@ import torch.nn.functional as F
 import torch
 from torch.autograd import Variable
 from torchvision.models import resnet152
-import pdb 
+import pdb
+
 
 ##############################
 #         Encoder
@@ -11,7 +12,7 @@ import pdb
 class Encoder(nn.Module):
     def __init__(self, latent_dim):
         super(Encoder, self).__init__()
-        resnet = resnet152(pretrained=True)
+        resnet = resnet152()
         self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
         self.final = nn.Sequential(
             nn.Linear(resnet.fc.in_features, latent_dim), nn.BatchNorm1d(latent_dim, momentum=0.01)
@@ -54,7 +55,7 @@ class LSTM(nn.Module):
 ##############################
 class OrigConvLSTM(nn.Module):
     def __init__(
-        self, num_classes, latent_dim=512, lstm_layers=1, hidden_dim=1024, bidirectional=True):
+            self, num_classes, latent_dim=512, lstm_layers=1, hidden_dim=1024, bidirectional=True):
         super(OrigConvLSTM, self).__init__()
         self.encoder = Encoder(latent_dim)
         self.lstm = LSTM(latent_dim, lstm_layers, hidden_dim, bidirectional)
@@ -65,4 +66,4 @@ class OrigConvLSTM(nn.Module):
         x = self.encoder(x)
         x_lstm = x.view(batch_size, seq_length, -1)
         x = self.lstm(x_lstm)
-        return x, x.argmax(1) 
+        return x, x.argmax(1)

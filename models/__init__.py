@@ -1,1 +1,1 @@
-from origconvlstm import *
+from models.origconvlstm import *

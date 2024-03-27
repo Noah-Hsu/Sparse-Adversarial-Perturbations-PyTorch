@@ -1,6 +1,7 @@
 import glob
 import random
 import os
+import re
 import numpy as np
 import torch
 
@@ -33,7 +34,7 @@ class Dataset(Dataset):
 
     def _extract_label_mapping(self, split_path="data/ucfTrainTestlist"):
         """ Extracts a mapping between activity name and softmax index """
-        with open(os.path.join(split_path, "classInd.txt")) as file:
+        with open(os.path.join(split_path, "classInd.txt").replace("\\", "/")) as file:
             lines = file.read().splitlines()
         label_mapping = {}
         for line in lines:
@@ -53,7 +54,7 @@ class Dataset(Dataset):
         sequence_paths = []
         for line in lines:
             seq_name = line.split(".avi")[0]
-            sequence_paths += [os.path.join(dataset_path, seq_name)]
+            sequence_paths += [os.path.join(dataset_path, seq_name).replace('\\', '/')]
         return sequence_paths
 
     def _activity_from_path(self, path):
@@ -62,7 +63,8 @@ class Dataset(Dataset):
 
     def _frame_number(self, image_path):
         """ Extracts frame number from filepath """
-        return int(image_path.split("/")[-1].split(".jpg")[0])
+        match = re.search(r'\d+', image_path)
+        return int(match.group())
 
     def _pad_to_length(self, sequence):
         """ Pads the sequence to required sequence length """
