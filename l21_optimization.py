@@ -168,6 +168,11 @@ def calc_gradients(
             # Empty cache
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+    ###############
+    # test
+        if batch_index == 0:
+            break
+    ###############
 
 def main():
     # Parse arguments
