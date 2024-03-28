@@ -6,10 +6,10 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from dataset import *
 from models import *
-
 # Select the device to run the code
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('Device: ' + str(device))
+labela = np.empty([101], dtype=object)
 
 def calc_gradients(
         test_dataloader,
@@ -37,6 +37,7 @@ def calc_gradients(
         input_image = Variable(input_image, requires_grad=True)
         probs, pre_label = model(input_image)
         print(f'Prediction: {pre_label.cpu().numpy()}, Original_label: {input_label.cpu().numpy()}')
+        labela[100] = pre_label.cpu().item()
 
         print('------------------prediction for adversarial video-------------------')
 
@@ -164,10 +165,11 @@ def calc_gradients(
                     print(str(pp) + ' ' + str((norm_frame[0][pp]).detach().cpu().numpy()))
 
             print(f'{iiter}Prediction for adversarial video: {pre_label.cpu().numpy()}, Original_label: {input_label.cpu().numpy()}')
-
+            labela[iiter] = pre_label.cpu().item()
             # Empty cache
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+        np.savetxt("./pic/label.txt", labela, fmt='%s')
     ###############
     # test
         if batch_index == 0:
